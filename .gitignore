@@ -1,0 +1,14 @@
+bin/
+obj/
+.vs/
+*.user
+# Built by tools/build-phonon.ps1; not committed.
+src/Hearwood/native/
+
+# Published builds
+dist/
+
+# Private, not published: local agent notes, and the voice-cloning tool, which needs
+# another project's code.
+CLAUDE.local.md
+tools/clone-voices/

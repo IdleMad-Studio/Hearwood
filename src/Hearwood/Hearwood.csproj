@@ -1,0 +1,45 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- The Windows 10 API target gives the WinRT StartupTask that the Store package needs; runs on 1809 and later. -->
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationIcon>assets\Hearwood.ico</ApplicationIcon>
+    <!-- Per-monitor DPI awareness: WinForms sets it at startup, and app.manifest declares it for the certification kit. -->
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- WFO0003 asks for DPI settings only in the project; the kit needs them in the manifest too, and the two agree. -->
+    <NoWarn>$(NoWarn);WFO0003</NoWarn>
+    <!-- Effective target RID: an explicit -r, else the SDK's own (an arm64 SDK builds win-arm64). -->
+    <HearwoodRid>$(RuntimeIdentifier)</HearwoodRid>
+    <HearwoodRid Condition="'$(HearwoodRid)' == ''">$(NETCoreSdkRuntimeIdentifier)</HearwoodRid>
+    <HearwoodArch>x64</HearwoodArch>
+    <HearwoodArch Condition="$(HearwoodRid.EndsWith('arm64'))">arm64</HearwoodArch>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Hearwood.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NAudio" Version="3.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Built by tools/build-phonon.ps1 and not committed. Without it the app builds, and says Pocket is missing. -->
+    <None Include="native\$(HearwoodArch)\*" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The built-in voices: ptts voice files made once from the Kokoro blends in voices/ (see CLAUDE.md). -->
+    <None Include="assets\voices\*.safetensors" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Drawn by tools/make_icon.py; loaded by Ui/AppIcon for the window and the tray. -->
+    <EmbeddedResource Include="assets\Hearwood.ico" LogicalName="Hearwood.assets.Hearwood.ico" />
+    <!-- The licences and notices the third-party code requires in every copy of the app; the tray's Licences menu opens them. -->
+    <!-- LICENSE gets an extension so Windows opens it in a text editor without asking. -->
+    <None Include="..\..\LICENSE" Link="LICENSE.txt" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\THIRD-PARTY-NOTICES.txt;..\..\ptts_ffi-crate-licences.txt" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

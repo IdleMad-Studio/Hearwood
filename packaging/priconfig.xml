@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  makepri's config for the package's resources.pri (tools/build-msix.ps1). It indexes exactly the files listed in
+  $ResFiles$, which the script writes: the logos in Assets\, named from the layout's root ("Files/Assets/StoreLogo.png",
+  as the manifest refers to them) with their scale and target-size variants. Indexing a folder instead would either
+  drop "Assets/" from the names or take in the .NET satellite folders (cs\, de\, ...) as languages.
+  There is no <packaging> section: every resource stays in the one package, with no split resource packages.
+-->
+<resources targetOsVersion="10.0.0" majorVersion="1">
+  <index root="\" startIndexAt="$ResFiles$">
+    <default>
+      <qualifier name="Language" value="en-US"/>
+      <qualifier name="Contrast" value="standard"/>
+      <qualifier name="Scale" value="100"/>
+      <qualifier name="HomeRegion" value="001"/>
+      <qualifier name="TargetSize" value="256"/>
+      <qualifier name="LayoutDirection" value="LTR"/>
+      <qualifier name="Theme" value="dark"/>
+      <qualifier name="AlternateForm" value=""/>
+      <qualifier name="DXFeatureLevel" value="DX9"/>
+      <qualifier name="Configuration" value=""/>
+      <qualifier name="DeviceFamily" value="Universal"/>
+      <qualifier name="Custom" value=""/>
+    </default>
+    <indexer-config type="RESFILES" qualifierDelimiter="."/>
+  </index>
+</resources>

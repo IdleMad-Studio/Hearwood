@@ -1,0 +1,13 @@
+ptts_ffi.dll: Rust crates compiled into it
+{{#each overview}}
+- {{name}} ({{count}} crates)
+{{/each}}
+{{#each licenses}}
+
+=============================================================================
+{{name}}
+Used by: {{#each used_by}}{{crate.name}} {{crate.version}}{{#unless @last}}, {{/unless}}{{/each}}
+=============================================================================
+
+{{{text}}}
+{{/each}}

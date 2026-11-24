@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Hearwood/Hearwood.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Hearwood.Tests/Hearwood.Tests.csproj" />
+  </Folder>
+</Solution>

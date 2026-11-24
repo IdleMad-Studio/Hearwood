@@ -1,0 +1,27 @@
+Hearwood Kokoro voice mixes
+
+Pronunciation follows the first voice in the recipe; the sound is the blend of all of them.
+Each name has a sample of about 10 seconds, <name>.wav, in this folder; Lines.txt has what each one says.
+
+Female
+------
+Name      Recipe                          Pronunciation
+Willow    af_heart 50 + af_bella 50       American
+Hazel     af_heart 60 + af_sarah 40       American
+Juniper   af_kore 60 + bf_emma 40         American
+Laurel    af_aoede 50 + af_sarah 50       American
+Aspen     bf_emma 60 + bf_isabella 40     British
+Heather   bf_emma 60 + af_kore 40         British
+Ivy       af_nova 50 + bf_isabella 50     American
+Primrose  bf_alice 50 + af_kore 50        British
+
+Male
+----
+Name      Recipe                          Pronunciation
+Alder     am_michael 50 + am_fenrir 50    American
+Rowan     am_puck 50 + am_fenrir 50       American
+Linden    bm_george 50 + bm_fable 50      British
+Cedar     am_michael 60 + bm_george 40    American
+Elm       am_eric 50 + bm_lewis 50        American
+Hawthorn  bm_george 60 + am_onyx 40       British
+Birch     bm_daniel 50 + am_puck 50       British
