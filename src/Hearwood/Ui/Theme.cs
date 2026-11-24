@@ -6,10 +6,10 @@ public sealed record Theme(
     Color Text, Color Muted, Color Accent, Color AccentHover, Color AccentPressed, Color OnAccent, Color Highlight)
 {
     public static readonly Theme Light = new(
-        Window: Hex(0xF3F5F2), Surface: Hex(0xFFFFFF), Control: Hex(0xE6EBE7), ControlHover: Hex(0xDAE2DC), ControlPressed: Hex(0xCBD6CE),
-        Border: Hex(0xD9E0DA), Text: Hex(0x1C2421), Muted: Hex(0x66726D),
-        Accent: Hex(0x1F7A66), AccentHover: Hex(0x238A73), AccentPressed: Hex(0x18604F), OnAccent: Hex(0xFFFFFF),
-        Highlight: Hex(0xC9EBDF));
+        Window: Hex(0xECF0ED), Surface: Hex(0xFFFFFF), Control: Hex(0xD2DBD5), ControlHover: Hex(0xC5D0C9), ControlPressed: Hex(0xB6C3BB),
+        Border: Hex(0xB4C1B9), Text: Hex(0x1C2421), Muted: Hex(0x56625D),
+        Accent: Hex(0x1B6E5B), AccentHover: Hex(0x1F7A66), AccentPressed: Hex(0x155646), OnAccent: Hex(0xFFFFFF),
+        Highlight: Hex(0x9CD5BF));
 
     public static readonly Theme Dark = new(
         Window: Hex(0x141917), Surface: Hex(0x1D2321), Control: Hex(0x29312E), ControlHover: Hex(0x323C38), ControlPressed: Hex(0x3B4742),
