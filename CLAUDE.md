@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Hearwood is a Windows tray app (WinForms, .NET 10, `net10.0-windows`) that reads text aloud with its own built-in TTS. It is the release version of a voice-cloning app by the same author: built-in voices only, no voice cloning and no audio-file output. The TTS is Kyutai's **Pocket TTS 100M** running in-process on the CPU through Gradium's Phonon runtime (`ptts_ffi.dll`). Its behaviour is modelled on another TTS app by the same author, and much of the Pocket code is ported from another of the author's projects. The name plays on heartwood; the voices are named after trees.
 
-Hearwood is licensed GPL-3.0-or-later (`LICENSE`), with a §7 additional permission to combine it with the Windows SDK for .NET DLLs (`Microsoft.Windows.SDK.NET.dll`, `WinRT.Runtime.dll`). Third-party code must be GPLv3-compatible (GPLv2-only code is not) and listed in `THIRD-PARTY-NOTICES.txt`.
+Hearwood is licensed GPL-3.0-or-later (notice in `NOTICE`, licence text in `COPYING`), with a §7 additional permission to combine it with the Windows SDK for .NET DLLs (`Microsoft.Windows.SDK.NET.dll`, `WinRT.Runtime.dll`). Third-party code must be GPLv3-compatible (GPLv2-only code is not) and listed in `THIRD-PARTY-NOTICES.txt`. Keep `COPYING` the plain GPL text and give no other root file a licence-like name (`LICENSE*`, `COPYING*`, `COPYRIGHT*`), or GitHub shows the licence as "Other".
 
 ## Commands
 

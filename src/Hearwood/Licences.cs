@@ -10,7 +10,8 @@ static class Licences
 {
     public static readonly (string Label, string File)[] Files =
     [
-        ("Hearwood licence", "LICENSE.txt"),
+        ("Hearwood licence", "NOTICE.txt"),
+        ("GNU General Public License v3", "COPYING.txt"),
         ("Third-party notices", "THIRD-PARTY-NOTICES.txt"),
         ("Rust crates in ptts_ffi.dll", "ptts_ffi-crate-licences.txt"),
     ];

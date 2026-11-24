@@ -96,4 +96,4 @@ Full licence texts and notices are in [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTI
 
 ## Licence
 
-Hearwood is free software, copyright IdleMad Studio: you can redistribute and modify it under the GNU General Public License, version 3 or (at your option) any later version, with an additional permission to combine it with Microsoft's Windows SDK for .NET; see [LICENSE](LICENSE). The model, the voices and the libraries above have their own licences, listed in [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt).
+Hearwood is free software, copyright IdleMad Studio: you can redistribute and modify it under the GNU General Public License, version 3 or (at your option) any later version, with an additional permission to combine it with Microsoft's Windows SDK for .NET; see [NOTICE](NOTICE) and the licence text in [COPYING](COPYING). The model, the voices and the libraries above have their own licences, listed in [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt).

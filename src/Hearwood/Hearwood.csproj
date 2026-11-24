@@ -37,8 +37,8 @@
     <!-- Drawn by tools/make_icon.py; loaded by Ui/AppIcon for the window and the tray. -->
     <EmbeddedResource Include="assets\Hearwood.ico" LogicalName="Hearwood.assets.Hearwood.ico" />
     <!-- The licences and notices the third-party code requires in every copy of the app; the tray's Licences menu opens them. -->
-    <!-- LICENSE gets an extension so Windows opens it in a text editor without asking. -->
-    <None Include="..\..\LICENSE" Link="LICENSE.txt" CopyToOutputDirectory="PreserveNewest" />
+    <!-- NOTICE and COPYING get an extension so Windows opens them in a text editor without asking. -->
+    <None Include="..\..\NOTICE;..\..\COPYING" Link="%(Filename).txt" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\THIRD-PARTY-NOTICES.txt;..\..\ptts_ffi-crate-licences.txt" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

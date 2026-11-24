@@ -1,0 +1,25 @@
+Hearwood
+Copyright (C) 2026 IdleMad Studio
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+The full text of the GNU General Public License, version 3, is in COPYING.
+
+Additional permission under GNU GPL version 3 section 7
+
+If you modify this Program, or any covered work, by linking or combining it
+with the Windows SDK for .NET (Microsoft.Windows.SDK.NET.dll and
+WinRT.Runtime.dll, from Microsoft's Microsoft.Windows.SDK.NET.Ref package), or
+a modified version of it, containing parts covered by the terms of the
+Microsoft Windows SDK licence, the licensors of this Program grant you
+additional permission to convey the resulting work.
+
+Hearwood includes third-party software, a model and voices, each under its own
+licence, listed in THIRD-PARTY-NOTICES.txt.
