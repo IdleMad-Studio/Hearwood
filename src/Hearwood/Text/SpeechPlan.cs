@@ -76,7 +76,7 @@ public static partial class SpeechPlan
                             pieces[^1] = pieces[^1] with { PauseAfter = Math.Max(pieces[^1].PauseAfter, PauseAfter(parts[p], endsParagraph && g < paragraphs.Count - 1)) };
                         continue;
                     }
-                    var spoken = WithPercentSpoken(said);
+                    var spoken = WithNumbersSpelled(WithPercentSpoken(WithNumberSignSpoken(said)));
                     if (last)
                         spoken = WithSentenceStop(spoken);
                     pieces.Add(new SpeechPiece(spoken, spans, PauseAfter(spoken, endsParagraph && g < paragraphs.Count - 1)));
@@ -159,6 +159,32 @@ public static partial class SpeechPlan
     public static string WithPercentSpoken(string text) =>
         text.Contains('%') ? PercentAfterNumber().Replace(text, " " + Percent) : text;
 
+    /// <summary>
+    /// The text with "#" before a number said as "number": "PR #174" becomes "PR number 174". ptts reads the sign only
+    /// in other languages; in English the model gets "#174" as it is, and garbles it and the words around it.
+    /// </summary>
+    public static string WithNumberSignSpoken(string text) =>
+        text.Contains('#') ? NumberSign().Replace(text, "number ") : text;
+
+    /// <summary>
+    /// The text with whole numbers from 100 up written as words: "174" becomes "one hundred seventy-four". ptts leaves
+    /// numbers under a thousand to the model as digits, and inside larger ones too ("1174" is "1 thousand 174"), and
+    /// the model often drops or mangles their hundreds: "174" came out as "seventy-four", "115" as "eleven fifteen",
+    /// "666" as "six six six". Spelled out, they are read right. Left to ptts: numbers under 100 and the years
+    /// 1900–2099, which the model reads well; numbers with a leading zero (codes); and anything joined to other
+    /// characters (decimals, times, ranges, money, "%", "3rd", "MP3"), which ptts has its own readings for.
+    /// </summary>
+    public static string WithNumbersSpelled(string text) =>
+        text.Any(char.IsAsciiDigit) ? WholeNumber().Replace(text, m =>
+        {
+            var digits = m.Value.Replace(",", "");
+            if (digits.Length > 12 || (digits.Length > 1 && digits[0] == '0'))
+                return m.Value;
+            long n = long.Parse(digits, System.Globalization.CultureInfo.InvariantCulture);
+            bool year = digits.Length == 4 && !m.Value.Contains(',') && n is >= 1900 and <= 2099;
+            return n < 100 || year ? m.Value : NumberWords.Cardinal(n);
+        }) : text;
+
     /// <summary>Shares a sentence's words between the pieces it was split into, in proportion to the pieces' word counts.</summary>
     public static IReadOnlyList<IReadOnlyList<string>> ShareWords(IReadOnlyList<string> words, IReadOnlyList<string> pieces)
     {
@@ -219,6 +245,17 @@ public static partial class SpeechPlan
     /// <summary>"%" after a digit, or one space after it, with no letter or digit following.</summary>
     [GeneratedRegex(@"(?<=\d)[   ]?%(?![\p{L}\p{N}])")]
     private static partial Regex PercentAfterNumber();
+
+    /// <summary>A "#" straight before a digit, not after a letter or digit ("C#7" is left alone).</summary>
+    [GeneratedRegex(@"(?<![\p{L}\p{N}_])#(?=\d)")]
+    private static partial Regex NumberSign();
+
+    /// <summary>
+    /// A whole number on its own (with or without thousands commas): no letter, digit or number mark ($ £ € ¥ . , : / - + _)
+    /// against its start, and no letter, digit, "%", "°", ":", "/", "-", decimal part or currency sign after it.
+    /// </summary>
+    [GeneratedRegex(@"(?<![\p{L}\p{N}_.,:/\-+$£€¥])(?:\d{1,3}(?:,\d{3})+|\d+)(?![\p{L}\p{N}_%°:/\-]|[.,]\d|\s?[$£€¥¢])")]
+    private static partial Regex WholeNumber();
 
     /// <summary>White space after a sentence mark (and any closing marks): where a sentence may end. <see cref="SentenceRules"/> decides.</summary>
     [GeneratedRegex(@"(?<=[.!?…][""”’')\]]*)\s+(?=\S)")]
