@@ -77,6 +77,34 @@ public static partial class SpeechPlan
         return pieces;
     }
 
+    /// <summary>The pieces for the <paramref name="part"/> of <paramref name="text"/>, with word offsets still in the whole text.</summary>
+    public static IReadOnlyList<SpeechPiece> Build(string text, Range part)
+    {
+        int from = part.GetOffsetAndLength(text.Length).Offset;
+        var pieces = Build(text[part]);
+        return from == 0 ? pieces : pieces
+            .Select(p => p with { Words = p.Words.Select(w => w with { Start = w.Start + from }).ToList() })
+            .ToList();
+    }
+
+    /// <summary>
+    /// Where reading "from here" starts for a click at <paramref name="index"/>: the start of the word there, or of the
+    /// next word when the click is on white space; the text's length when no word follows.
+    /// </summary>
+    public static int WordStartAt(string text, int index)
+    {
+        index = Math.Clamp(index, 0, text.Length);
+        if (index == text.Length || char.IsWhiteSpace(text[index]))
+        {
+            while (index < text.Length && char.IsWhiteSpace(text[index]))
+                index++;
+            return index;
+        }
+        while (index > 0 && !char.IsWhiteSpace(text[index - 1]))
+            index--;
+        return index;
+    }
+
     /// <summary>
     /// Sentences of a paragraph, by <see cref="SentenceRules"/>: "Mr. Harlow" and "3 p.m. today" stay
     /// whole. Pieces with nothing to say are dropped.

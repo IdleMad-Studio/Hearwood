@@ -26,4 +26,29 @@ public class ConfigTests
     [Fact]
     public void Every_listed_speed_is_within_what_the_stream_allows() =>
         Assert.All(Config.SpeedChoices, s => Assert.InRange(s, Config.MinRate, Config.MaxRate));
+
+    [Fact]
+    public void The_default_text_size_is_listed() =>
+        Assert.Contains(Config.DefaultTextSize, Config.TextSizeChoices);
+
+    [Fact]
+    public void The_text_sizes_rise() =>
+        Assert.Equal(Config.TextSizeChoices.Order(), Config.TextSizeChoices);
+
+    [Theory]
+    [InlineData(12.5f, 1, 14f)]
+    [InlineData(12.5f, -1, 11f)]
+    [InlineData(12.5f, 3, 18f)]
+    [InlineData(10f, -1, 10f)]
+    [InlineData(32f, 1, 32f)]
+    [InlineData(13f, 1, 14f)]
+    public void Text_size_steps_move_along_the_list_and_stop_at_its_ends(float from, int steps, float expected) =>
+        Assert.Equal(expected, Config.StepTextSize(from, steps));
+
+    [Theory]
+    [InlineData(0f, 10f)]
+    [InlineData(15.5f, 16f)]
+    [InlineData(100f, 32f)]
+    public void A_stored_text_size_snaps_to_the_list(float stored, float expected) =>
+        Assert.Equal(expected, Config.SnapTextSize(stored));
 }

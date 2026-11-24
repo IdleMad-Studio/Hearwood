@@ -7,6 +7,8 @@ Hearwood is a small Windows tray app that reads text aloud. Select text in any a
 - **Read the selection from any app** with a global hotkey, without opening a window.
 - **Change speed while it speaks**, from 0.75× to 3×. The pitch stays the same.
 - **Word highlighting** in the Hearwood window follows the speech. The model doesn't report timings, so the highlight position is an estimate.
+- **Read from any word** or just the selected text, from the window's right-click menu.
+- **Adjustable text size** in the window.
 - **Fifteen voices**, American and British, female and male (see [Voices](#voices)).
 - **Light and dark themes**, following the Windows setting.
 - **Start with Windows** (an option in the tray menu), starting in the tray.
@@ -24,6 +26,7 @@ Hearwood lives in the notification area. Double-click the tray icon to open the 
 | Hotkey | Action |
 |---|---|
 | Ctrl+Alt+S | Read the selected text (in any app) |
+| Ctrl+Alt+P | Pause / resume |
 | Ctrl+Alt+X | Stop |
 | Ctrl+Alt+Up / Down | Faster / slower |
 
@@ -32,6 +35,10 @@ To use other keys, click **Change Hotkeys** in the window's footer or the tray m
 To read the selection, Hearwood presses Ctrl+C in the app you're using and then restores what was on your clipboard. If nothing is selected, it reads whatever text is on the clipboard.
 
 In the window, type or paste text and press **Speak**. The same button pauses and resumes.
+
+Right-click the text for **Read from here** (starting at the word you clicked), **Read selection**, **Paste and read** (replacing the text with the clipboard), and the usual Undo, Cut, Copy, Paste and Select all. Opened from the keyboard (Shift+F10 or the Menu key), Read from here starts at the cursor.
+
+To change the text size, use the **A−** and **A+** buttons, press Ctrl+Plus or Ctrl+Minus (Ctrl+0 goes back to the default), or hold Ctrl and turn the mouse wheel. The size is remembered.
 
 ### Settings and files
 

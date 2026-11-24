@@ -24,8 +24,15 @@ public sealed class Config
         WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 
+    /// <summary>The text box's font size in points, before scaling for the monitor.</summary>
+    public const float DefaultTextSize = 12.5f;
+
+    /// <summary>The text sizes offered, in points.</summary>
+    public static IReadOnlyList<float> TextSizeChoices { get; } = [10f, 11f, 12.5f, 14f, 16f, 18f, 20f, 24f, 28f, 32f];
+
     public string? Voice { get; set; }
     public double Rate { get; set; } = 1.0;
+    public float TextSize { get; set; } = DefaultTextSize;
     public bool StartWithWindows { get; set; }
 
     /// <summary>
@@ -52,6 +59,16 @@ public sealed class Config
         return SpeedChoices[Math.Clamp(at + steps, 0, SpeedChoices.Count - 1)];
     }
 
+    /// <summary>The listed text size nearest to <paramref name="size"/> (a hand-edited config may hold any value).</summary>
+    public static float SnapTextSize(float size) => TextSizeChoices.MinBy(c => Math.Abs(c - size));
+
+    /// <summary>The listed text size <paramref name="steps"/> places from <paramref name="size"/>, stopping at the ends.</summary>
+    public static float StepTextSize(float size, int steps)
+    {
+        int at = TextSizeChoices.ToList().IndexOf(SnapTextSize(size));
+        return TextSizeChoices[Math.Clamp(at + steps, 0, TextSizeChoices.Count - 1)];
+    }
+
     public static Config Load()
     {
         try
@@ -59,7 +76,7 @@ public sealed class Config
             if (File.Exists(PathOnDisk))
             {
                 var c = JsonSerializer.Deserialize<Config>(File.ReadAllText(PathOnDisk));
-                if (c != null) { c.Rate = SnapRate(c.Rate); return c; }
+                if (c != null) { c.Rate = SnapRate(c.Rate); c.TextSize = SnapTextSize(c.TextSize); return c; }
             }
         }
         catch (Exception) { /* corrupt file: fall back to defaults */ }

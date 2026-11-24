@@ -25,8 +25,12 @@ public sealed class MainWindow : Form
     readonly PillButton _speak;
     readonly PillButton _stop;
     readonly PillButton _clear;
+    readonly PillButton _smaller;
+    readonly PillButton _larger;
+    readonly ToolTip _tips = new();
     readonly PillButton _hotkeysButton;
     readonly ContextMenuStrip _hotkeysMenu = new();
+    readonly ContextMenuStrip _textMenu = new();
     readonly ComboBox _voice = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 190, FlatStyle = FlatStyle.Flat };
     readonly ComboBox _speed = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 84, FlatStyle = FlatStyle.Flat };
     readonly Label _status = new() { AutoSize = true, Anchor = AnchorStyles.Left };
@@ -38,6 +42,14 @@ public sealed class MainWindow : Form
     object _boxVersion = new();
     WordSpan? _lit;
     bool _updatingControls;
+    /// <summary>The configured size the box's font was last set from; its font may since have been scaled for a monitor.</summary>
+    float _textSizeShown;
+    /// <summary>Ctrl+wheel movement short of a whole notch, as a precision touchpad sends it.</summary>
+    int _wheelRest;
+    /// <summary>Where the box was last right-clicked; null when its menu is opened from the keyboard, which reads from the caret.</summary>
+    Point? _rightClick;
+    /// <summary>Where "Read from here" starts, set as the box's menu opens.</summary>
+    int _readFrom;
 
     public MainWindow(Config cfg, PocketService pocket, SpeechPlayer player)
     {
@@ -64,6 +76,14 @@ public sealed class MainWindow : Form
         _stop = Button(Glyph.Stop, "Stop");
         _stop.Enabled = false;
         _clear = Button(Glyph.Clear, "Clear");
+        // Letters rather than the icon font's font-size glyphs, whose accent marks are too small to read.
+        _smaller = Button("", "A−");
+        _smaller.AccessibleName = "Smaller text";
+        _larger = Button("", "A+");
+        _larger.AccessibleName = "Larger text";
+        _larger.Margin = new Padding(0, 0, 16, 0);
+        _tips.SetToolTip(_smaller, "Smaller text (Ctrl+Minus)");
+        _tips.SetToolTip(_larger, "Larger text (Ctrl+Plus)");
         _hotkeysButton = new PillButton(_theme) { Glyph = Glyph.Keyboard, Text = HotkeyDialog.ChangeLabel, Font = Theme.UiFont(9f), BaseHeight = 30, Margin = Padding.Empty };
 
         foreach (var combo in new[] { _voice, _speed })
@@ -96,7 +116,8 @@ public sealed class MainWindow : Form
         };
         _text.BackColor = _theme.Surface;
         _text.ForeColor = _theme.Text;
-        _text.Font = Theme.UiFont(12.5f);
+        _textSizeShown = _cfg.TextSize;
+        _text.Font = Theme.UiFont(_textSizeShown);
         _status.ForeColor = _theme.Muted;
         _status.Font = Theme.UiFont(9f);
 
@@ -118,7 +139,7 @@ public sealed class MainWindow : Form
         var card = new Card(_theme) { Dock = DockStyle.Fill, Margin = new Padding(0, 12, 0, 14) };
         card.Controls.Add(_text);
 
-        var actions = Bar(Row(_speak, _stop), Row(_clear));
+        var actions = Bar(Row(_speak, _stop), Row(_smaller, _larger, _clear));
         _clear.Margin = Padding.Empty;
 
         _hint.ForeColor = _theme.Muted;
@@ -149,6 +170,7 @@ public sealed class MainWindow : Form
             _speed.Items.Add(new SpeedItem(s));
         RefreshVoices();
         RefreshSpeed();
+        RefreshTextSize();
 
         _speak.Click += (_, _) =>
         {
@@ -157,6 +179,8 @@ public sealed class MainWindow : Form
         };
         _stop.Click += (_, _) => _player.Stop();
         _clear.Click += (_, _) => { ReplaceText(""); _text.Focus(); };
+        _smaller.Click += (_, _) => StepTextSize(-1);
+        _larger.Click += (_, _) => StepTextSize(+1);
         _hotkeysButton.Click += (_, _) =>
         {
             // Built on each click so the items show the hotkeys as they are now.
@@ -182,6 +206,11 @@ public sealed class MainWindow : Form
             ClearHighlight();
         };
         _text.KeyDown += OnTextKeyDown;
+        _text.MouseWheel += OnTextMouseWheel;
+
+        BuildTextMenu();
+        _text.ContextMenuStrip = _textMenu;
+        _text.MouseDown += (_, e) => { if (e.Button == MouseButtons.Right) _rightClick = e.Location; };
 
         _player.StateChanged += () => BeginInvokeIfAlive(UpdatePlaybackControls);
         _highlightTimer.Tick += (_, _) => UpdateHighlight();
@@ -232,6 +261,9 @@ public sealed class MainWindow : Form
     /// <summary>The user picked a speed in the window.</summary>
     public event Action<double>? RateChosen;
 
+    /// <summary>The user picked a text size in the window, in points.</summary>
+    public event Action<float>? TextSizeChosen;
+
     /// <summary>The user asked to change an action's hotkey from the window.</summary>
     public event Action<HotkeyAction>? HotkeyChangeChosen;
 
@@ -272,16 +304,105 @@ public sealed class MainWindow : Form
         _updatingControls = false;
     }
 
-    void SpeakBox()
+    /// <summary>Sets the box's font to the configured size, at the scale WinForms has given it for the monitor.</summary>
+    public void RefreshTextSize()
+    {
+        _smaller.Enabled = _cfg.TextSize > Config.TextSizeChoices[0];
+        _larger.Enabled = _cfg.TextSize < Config.TextSizeChoices[^1];
+        if (_cfg.TextSize == _textSizeShown)
+            return;
+        float monitorScale = _text.Font.Size / _textSizeShown;
+        _textSizeShown = _cfg.TextSize;
+        _highlighter.SetFont(Theme.UiFont(_textSizeShown * monitorScale));
+    }
+
+    void StepTextSize(int steps) => TextSizeChosen?.Invoke(Config.StepTextSize(_cfg.TextSize, steps));
+
+    /// <summary>Speaks the <paramref name="part"/> of the box's text (all of it by default), lighting each word as it is heard.</summary>
+    void SpeakBox(Range? part = null)
     {
         var text = _text.Text;
-        if (string.IsNullOrWhiteSpace(text))
+        var range = part ?? Range.All;
+        if (string.IsNullOrWhiteSpace(text[range]))
         {
             SetStatus("Nothing to read.");
             return;
         }
         ClearHighlight();
-        _player.Speak(text, Voice, _boxVersion);
+        _player.Speak(text, Voice, _boxVersion, range);
+    }
+
+    /// <summary>
+    /// The box's right-click menu: reading, then the usual editing commands (RichTextBox has none of its own). The
+    /// shortcuts are only shown: the box handles the keys itself, so Ctrl+V still pastes plain text.
+    /// </summary>
+    void BuildTextMenu()
+    {
+        ToolStripMenuItem Item(string text, string? keys, Action click)
+        {
+            var item = new ToolStripMenuItem(text) { ShortcutKeyDisplayString = keys };
+            item.Click += (_, _) => click();
+            return item;
+        }
+        var readFromHere = Item("Read from here", null, () => SpeakBox(_readFrom..));
+        var readSelection = Item("Read selection", null, () =>
+        {
+            int start = _text.SelectionStart, end = start + _text.SelectionLength;
+            // The selection's colour would hide the lit word.
+            _text.Select(start, 0);
+            SpeakBox(start..end);
+        });
+        var pasteAndRead = Item("Paste and read", null, () => { if (ClipboardText() is { } t) SpeakInBox(t); });
+        var undo = Item("Undo", "Ctrl+Z", _text.Undo);
+        var cut = Item("Cut", "Ctrl+X", _text.Cut);
+        var copy = Item("Copy", "Ctrl+C", _text.Copy);
+        var paste = Item("Paste", "Ctrl+V", PastePlain);
+        var delete = Item("Delete", "Del", () => _text.SelectedText = "");
+        var selectAll = Item("Select all", "Ctrl+A", _text.SelectAll);
+        _textMenu.Items.AddRange([
+            readFromHere, readSelection, pasteAndRead, new ToolStripSeparator(),
+            undo, new ToolStripSeparator(), cut, copy, paste, delete, new ToolStripSeparator(), selectAll,
+        ]);
+
+        _textMenu.Opening += (_, _) =>
+        {
+            var text = _text.Text;
+            _readFrom = SpeechPlan.WordStartAt(text, _rightClick is { } p ? CharIndexAt(p) : _text.SelectionStart);
+            _rightClick = null;
+            bool selected = _text.SelectionLength > 0;
+            bool clipboardText = !string.IsNullOrWhiteSpace(ClipboardText());
+            readFromHere.Enabled = !string.IsNullOrWhiteSpace(text[_readFrom..]);
+            readSelection.Available = selected && !string.IsNullOrWhiteSpace(_text.SelectedText);
+            pasteAndRead.Enabled = clipboardText;
+            undo.Enabled = _text.CanUndo;
+            cut.Enabled = copy.Enabled = delete.Enabled = selected;
+            paste.Enabled = clipboardText;
+            selectAll.Enabled = _text.TextLength > 0;
+        };
+    }
+
+    /// <summary>Pastes the clipboard as plain text: formatting from a web page or document has no place in what is read aloud.</summary>
+    void PastePlain()
+    {
+        if (ClipboardText() is { } text)
+            _text.SelectedText = text;
+    }
+
+    /// <summary>The clipboard's text; null when it has none or another program has it open.</summary>
+    static string? ClipboardText()
+    {
+        try { return Clipboard.ContainsText() ? Clipboard.GetText() : null; }
+        catch (System.Runtime.InteropServices.ExternalException) { return null; }
+    }
+
+    /// <summary>The character at <paramref name="point"/> in the box; the end of the text for a point below its last line.</summary>
+    int CharIndexAt(Point point)
+    {
+        if (_text.TextLength == 0)
+            return 0;
+        // RichEdit gives the nearest character, which for a click in the empty space below the text is the last one.
+        int lastLineTop = _text.GetPositionFromCharIndex(_text.TextLength - 1).Y;
+        return point.Y >= lastLineTop + _text.Font.Height ? _text.TextLength : _text.GetCharIndexFromPosition(point);
     }
 
     /// <summary>Replaces the whole text as a single edit, so one Ctrl+Z brings the old text back.</summary>
@@ -294,13 +415,38 @@ public sealed class MainWindow : Form
 
     void OnTextKeyDown(object? sender, KeyEventArgs e)
     {
-        // Paste as plain text: formatting from a web page or document has no place in what is read aloud.
         if ((e.Control && e.KeyCode == Keys.V) || (e.Shift && e.KeyCode == Keys.Insert))
         {
             e.SuppressKeyPress = true;
-            if (Clipboard.ContainsText())
-                _text.SelectedText = Clipboard.GetText();
+            PastePlain();
+            return;
         }
+        // Text size, as in a browser. Handled here, these keys also never reach RichEdit's own Ctrl+= (subscript).
+        if (e.Control && !e.Alt)
+        {
+            switch (e.KeyCode)
+            {
+                case Keys.Oemplus or Keys.Add: StepTextSize(+1); break;
+                case Keys.OemMinus or Keys.Subtract: StepTextSize(-1); break;
+                case Keys.D0 or Keys.NumPad0: TextSizeChosen?.Invoke(Config.DefaultTextSize); break;
+                default: return;
+            }
+            e.SuppressKeyPress = true;
+        }
+    }
+
+    /// <summary>Ctrl+wheel steps the text size; left to RichEdit, it would zoom instead, unsaved and undone by Clear.</summary>
+    void OnTextMouseWheel(object? sender, MouseEventArgs e)
+    {
+        if ((ModifierKeys & Keys.Control) == 0)
+            return;
+        if (e is HandledMouseEventArgs handled)
+            handled.Handled = true;
+        _wheelRest += e.Delta;
+        int steps = _wheelRest / SystemInformation.MouseWheelScrollDelta;
+        _wheelRest %= SystemInformation.MouseWheelScrollDelta;
+        if (steps != 0)
+            StepTextSize(steps);
     }
 
     void UpdatePlaybackControls()
@@ -348,7 +494,7 @@ public sealed class MainWindow : Form
 
     protected override void Dispose(bool disposing)
     {
-        if (disposing) { _highlightTimer.Dispose(); _hotkeysMenu.Dispose(); }
+        if (disposing) { _highlightTimer.Dispose(); _hotkeysMenu.Dispose(); _textMenu.Dispose(); _tips.Dispose(); }
         base.Dispose(disposing);
     }
 }

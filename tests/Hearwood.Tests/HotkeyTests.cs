@@ -48,6 +48,7 @@ public class HotkeyTests
     {
         var cfg = new Config();
         Assert.Equal("Ctrl+Alt+S", cfg.GetHotkey(HotkeyAction.Read).ToString());
+        Assert.Equal("Ctrl+Alt+P", cfg.GetHotkey(HotkeyAction.Pause).ToString());
         Assert.Equal("Ctrl+Alt+X", cfg.GetHotkey(HotkeyAction.Stop).ToString());
         Assert.Equal("Ctrl+Alt+Up", cfg.GetHotkey(HotkeyAction.Faster).ToString());
         Assert.Equal("Ctrl+Alt+Down", cfg.GetHotkey(HotkeyAction.Slower).ToString());

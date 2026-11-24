@@ -79,6 +79,18 @@ sealed class TextHighlighter(RichTextBox box, Color highlight)
         Paint(() => Doc().Range(0, box.TextLength + 1).Font.BackColor = TomAutoColor);
     }
 
+    /// <summary>
+    /// Changes the box's font as a view setting, not an edit: setting a RichTextBox's font is otherwise an undo step
+    /// and raises TextChanged. Background colours are kept, so a lit word stays lit.
+    /// </summary>
+    public void SetFont(Font font)
+    {
+        if (!box.IsHandleCreated)
+            box.Font = font;
+        else
+            Paint(() => box.Font = font);
+    }
+
     void Paint(Action apply)
     {
         if (!box.IsHandleCreated)

@@ -55,6 +55,43 @@ public class TextHighlighterTests
         Assert.Equal(0, FirstVisibleLine(box));
     });
 
+    [Fact]
+    public void AFontChangeIsNotAnUndoStepOrAnEdit() => OnSta(box =>
+    {
+        var lit = new TextHighlighter(box, Color.Yellow);
+        box.ClearUndo();
+        box.Select(box.TextLength, 0);
+        box.SelectedText = " typed";
+        bool editSeen = false;
+        box.TextChanged += (_, _) => editSeen |= !lit.IsPainting;
+
+        lit.SetFont(new Font("Segoe UI", 20f));
+
+        Assert.Equal(20f, box.Font.Size);
+        Assert.False(editSeen);
+        box.Undo();
+        Assert.DoesNotContain("typed", box.Text);
+        Assert.False(box.CanUndo);
+        Assert.Equal(20f, box.Font.Size);
+    });
+
+    [Fact]
+    public void TheLitWordStaysLitThroughAFontChange() => OnSta(box =>
+    {
+        var lit = new TextHighlighter(box, Color.Yellow);
+        lit.Show(Start(2), 4);
+
+        lit.SetFont(new Font("Segoe UI", 20f));
+
+        Assert.Equal(Color.Yellow.ToArgb(), BackColorAt(box, Start(2)).ToArgb());
+    });
+
+    static Color BackColorAt(RichTextBox box, int index)
+    {
+        box.Select(index, 1);
+        return box.SelectionBackColor;
+    }
+
     /// <summary>Where line <paramref name="n"/> starts: each line is "Line NN" and a line break.</summary>
     static int Start(int n) => n * "Line 00\n".Length;
 

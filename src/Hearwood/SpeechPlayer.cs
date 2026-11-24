@@ -31,10 +31,11 @@ public sealed class SpeechPlayer : IDisposable
     /// <summary>What the utterance was started with, so the UI knows whether the words reported are the text box's.</summary>
     public object? CurrentTag => _current is { Finished: false } u ? u.Tag : null;
 
-    public void Speak(string text, string voice, object? tag = null)
+    /// <summary>Speaks the <paramref name="part"/> of <paramref name="text"/> (all of it by default); the words reported are offsets in the whole text.</summary>
+    public void Speak(string text, string voice, object? tag = null, Range? part = null)
     {
         Stop();
-        var plan = SpeechPlan.Build(text);
+        var plan = SpeechPlan.Build(text, part ?? Range.All);
         if (plan.Count == 0)
             return;
         var stream = new SpeechStream(_ => _pocket.ReadyAsync(voice), plan, voice) { Rate = () => Rate };

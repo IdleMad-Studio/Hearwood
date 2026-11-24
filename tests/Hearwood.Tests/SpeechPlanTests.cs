@@ -162,4 +162,50 @@ public class SpeechPlanTests
         Assert.True(SpeechPlan.Weight("extraordinary") > SpeechPlan.Weight("a"));
         Assert.True(SpeechPlan.Weight("1847") > SpeechPlan.Weight("a") * 3);
     }
+
+    [Fact]
+    public void Reading_from_a_word_starts_there_and_keeps_offsets_in_the_whole_text()
+    {
+        const string text = "First sentence here. Second one follows.\nA new line.";
+        int from = text.IndexOf("one", StringComparison.Ordinal);
+
+        var pieces = SpeechPlan.Build(text, from..);
+
+        Assert.StartsWith("one follows.", pieces[0].Text);
+        var words = pieces.SelectMany(p => p.Words).Select(w => text.Substring(w.Start, w.Length));
+        Assert.Equal(["one", "follows.", "A", "new", "line."], words);
+    }
+
+    [Fact]
+    public void Reading_from_the_start_is_the_whole_plan()
+    {
+        const string text = "One. Two three.";
+        Assert.Equal(SpeechPlan.Build(text).Select(p => p.Text), SpeechPlan.Build(text, Range.All).Select(p => p.Text));
+    }
+
+    [Fact]
+    public void Reading_a_selection_stops_at_its_end()
+    {
+        const string text = "Before it. The chosen words here. After it.";
+        int from = text.IndexOf("chosen", StringComparison.Ordinal);
+        int to = text.IndexOf(" here", StringComparison.Ordinal);
+
+        var pieces = SpeechPlan.Build(text, from..to);
+
+        var piece = Assert.Single(pieces);
+        Assert.Equal("chosen words.", piece.Text);
+        Assert.Equal(["chosen", "words"], piece.Words.Select(w => text.Substring(w.Start, w.Length)));
+    }
+
+    [Theory]
+    [InlineData("alpha beta gamma", 8, 6)]   // inside "beta"
+    [InlineData("alpha beta gamma", 6, 6)]   // on its first letter
+    [InlineData("alpha beta gamma", 5, 6)]   // on the space before it
+    [InlineData("alpha beta gamma", 0, 0)]
+    [InlineData("alpha beta gamma", 16, 16)] // past the last word
+    [InlineData("alpha\n\nbeta", 6, 7)]      // on a blank line: the next paragraph
+    [InlineData("alpha   ", 6, 8)]           // trailing space: nothing follows
+    [InlineData("", 0, 0)]
+    public void Read_from_here_starts_at_the_word_clicked_or_the_next_one(string text, int clicked, int expected) =>
+        Assert.Equal(expected, SpeechPlan.WordStartAt(text, clicked));
 }

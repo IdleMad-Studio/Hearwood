@@ -18,7 +18,7 @@ public sealed class TrayApp : ApplicationContext
     readonly HotkeyManager _hotkeys = new();
     readonly ToolStripMenuItem _voiceMenu = new("Voice");
     readonly ToolStripMenuItem _speedMenu = new("Speed");
-    readonly ToolStripMenuItem _pauseItem = new("Pause");
+    readonly ToolStripMenuItem _pauseItem = new();
     readonly ToolStripMenuItem _stopItem = new();
     readonly ToolStripMenuItem _hotkeysMenu = new(HotkeyDialog.ChangeLabel);
     readonly RegisteredWaitHandle _showWait;
@@ -35,10 +35,11 @@ public sealed class TrayApp : ApplicationContext
         _player.StateChanged += () => Post(() =>
         {
             _pauseItem.Enabled = _player.IsSpeaking;
-            _pauseItem.Text = _player.IsPaused ? "Resume" : "Pause";
+            ShowPauseItem();
         });
         _window.VoiceChosen += SetVoice;
         _window.RateChosen += SetRate;
+        _window.TextSizeChosen += SetTextSize;
         _window.HotkeyChangeChosen += ChangeHotkey;
 
         _pauseItem.Enabled = false;
@@ -105,6 +106,7 @@ public sealed class TrayApp : ApplicationContext
             Add(_cfg.GetHotkey(action), action switch
             {
                 HotkeyAction.Read => async () => await SpeakSelectionAsync(),
+                HotkeyAction.Pause => _player.TogglePause,
                 HotkeyAction.Stop => _player.Stop,
                 HotkeyAction.Faster => () => SetRate(Config.StepRate(_cfg.Rate, +1)),
                 HotkeyAction.Slower => () => SetRate(Config.StepRate(_cfg.Rate, -1)),
@@ -183,6 +185,15 @@ public sealed class TrayApp : ApplicationContext
         TrySave();
     }
 
+    void SetTextSize(float size)
+    {
+        size = Config.SnapTextSize(size);
+        if (size == _cfg.TextSize) return;
+        _cfg.TextSize = size;
+        _window.RefreshTextSize();
+        TrySave();
+    }
+
     async Task SetStartWithWindowsAsync(ToolStripMenuItem item)
     {
         try
@@ -218,9 +229,13 @@ public sealed class TrayApp : ApplicationContext
     void BuildHotkeysMenu()
     {
         _stopItem.Text = $"Stop ({_cfg.GetHotkey(HotkeyAction.Stop)})";
+        ShowPauseItem();
         _hotkeysMenu.DropDownItems.Clear();
         _hotkeysMenu.DropDownItems.AddRange(HotkeyDialog.MenuItems(_cfg, ChangeHotkey));
     }
+
+    void ShowPauseItem() =>
+        _pauseItem.Text = $"{(_player.IsPaused ? "Resume" : "Pause")} ({_cfg.GetHotkey(HotkeyAction.Pause)})";
 
     void BuildVoiceMenu()
     {
