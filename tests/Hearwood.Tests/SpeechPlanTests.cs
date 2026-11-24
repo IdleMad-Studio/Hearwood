@@ -78,7 +78,7 @@ public class SpeechPlanTests
 
     [Theory]
     [InlineData("Chapter One", "Chapter One.")]
-    [InlineData("Table 2", "Table 2.")]
+    [InlineData("Table 2", "Table two.")]
     [InlineData("It ended.", "It ended.")]
     [InlineData("Was it?", "Was it?")]
     [InlineData("\"Go home\"", "\"Go home\"")]
@@ -135,11 +135,11 @@ public class SpeechPlanTests
     }
 
     [Theory]
-    [InlineData("Prices rose by 9.99% last year.", "Prices rose by 9.99 percent last year.")]
-    [InlineData("Up 12%.", "Up 12 percent.")]
-    [InlineData("It fell 3.5 % today.", "It fell 3.5 percent today.")]
-    [InlineData("(about 40%)", "(about 40 percent)")]
-    [InlineData("It rose 12%", "It rose 12 percent.")]
+    [InlineData("Prices rose by 9.99% last year.", "Prices rose by nine point nine nine percent last year.")]
+    [InlineData("Up 12%.", "Up twelve percent.")]
+    [InlineData("It fell 3.5 % today.", "It fell three point five percent today.")]
+    [InlineData("(about 40%)", "(about forty percent)")]
+    [InlineData("It rose 12%", "It rose twelve percent.")]
     [InlineData("Go to example.com/a%20b now.", "Go to example.com/a%20b now.")]
     [InlineData("Use x1%2F here.", "Use x1%2F here.")]
     [InlineData("Use % here.", "Use % here.")]
