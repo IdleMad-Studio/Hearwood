@@ -77,7 +77,7 @@ public static partial class SpeechPlan
                         continue;
                     }
                     // Numbers before "%": they read "50%-60%" as one range, and a "%" they leave is still spoken.
-                    var spoken = WithPercentSpoken(EnglishNumbers.Spell(WithNumberSignSpoken(said)));
+                    var spoken = WithPercentSpoken(EnglishNumbers.Spell(WithoutNumberSign(said)));
                     if (last)
                         spoken = WithSentenceStop(spoken);
                     pieces.Add(new SpeechPiece(spoken, spans, PauseAfter(spoken, endsParagraph && g < paragraphs.Count - 1)));
@@ -161,11 +161,12 @@ public static partial class SpeechPlan
         text.Contains('%') ? PercentAfterNumber().Replace(text, " " + Percent) : text;
 
     /// <summary>
-    /// The text with "#" before a number said as "number": "PR #174" becomes "PR number 174". ptts reads the sign only
-    /// in other languages; in English the model gets "#174" as it is, and garbles it and the words around it.
+    /// The text without the "#" before a number: "PR #174" is read "PR 174". ptts reads the sign only in other
+    /// languages; in English the model gets "#174" as it is and garbles it and the words around it ("PR #174" came out
+    /// as "PR7"), and a "#" left before the number spelled out still threw it at times.
     /// </summary>
-    public static string WithNumberSignSpoken(string text) =>
-        text.Contains('#') ? NumberSign().Replace(text, "number ") : text;
+    public static string WithoutNumberSign(string text) =>
+        text.Contains('#') ? NumberSign().Replace(text, "") : text;
 
     /// <summary>Shares a sentence's words between the pieces it was split into, in proportion to the pieces' word counts.</summary>
     public static IReadOnlyList<IReadOnlyList<string>> ShareWords(IReadOnlyList<string> words, IReadOnlyList<string> pieces)

@@ -148,16 +148,16 @@ public class EnglishNumbersTests
         Assert.Equal(words, EnglishNumbers.Cardinal(n));
 
     [Theory]
-    [InlineData("PR #174", "PR number 174")]
-    [InlineData("#1 in the charts", "number 1 in the charts")]
-    [InlineData("See issues #12 and #13.", "See issues number 12 and number 13.")]
+    [InlineData("PR #174", "PR 174")]
+    [InlineData("#1 in the charts", "1 in the charts")]
+    [InlineData("See issues #12 and #13.", "See issues 12 and 13.")]
     [InlineData("Play it in C#7.", "Play it in C#7.")]
     [InlineData("Use #hashtags and # signs.", "Use #hashtags and # signs.")]
-    public void A_number_sign_before_a_number_is_said_as_number(string text, string spoken) =>
-        Assert.Equal(spoken, SpeechPlan.WithNumberSignSpoken(text));
+    public void A_number_sign_before_a_number_is_not_read(string text, string spoken) =>
+        Assert.Equal(spoken, SpeechPlan.WithoutNumberSign(text));
 
     [Theory]
-    [InlineData("Merged PR #174 today.", "Merged PR number one hundred seventy-four today.", new[] { "Merged", "PR", "#174", "today." })]
+    [InlineData("Merged PR #174 today.", "Merged PR one hundred seventy-four today.", new[] { "Merged", "PR", "#174", "today." })]
     [InlineData("Up 50%-60% now.", "Up fifty percent to sixty percent now.", new[] { "Up", "50%-60%", "now." })]
     public void A_plan_reads_the_numbers_out_but_lights_the_words_as_written(string text, string spoken, string[] words)
     {
