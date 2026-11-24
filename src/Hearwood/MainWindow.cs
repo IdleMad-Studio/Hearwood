@@ -29,6 +29,7 @@ public sealed class MainWindow : Form
     readonly PillButton _larger;
     readonly ToolTip _tips = new();
     readonly PillButton _hotkeysButton;
+    readonly PillButton _substitutionsButton;
     readonly ContextMenuStrip _hotkeysMenu = new();
     readonly ContextMenuStrip _textMenu = new();
     readonly ComboBox _voice = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 190, FlatStyle = FlatStyle.Flat };
@@ -85,6 +86,8 @@ public sealed class MainWindow : Form
         _tips.SetToolTip(_smaller, "Smaller text (Ctrl+Minus)");
         _tips.SetToolTip(_larger, "Larger text (Ctrl+Plus)");
         _hotkeysButton = new PillButton(_theme) { Glyph = Glyph.Keyboard, Text = HotkeyDialog.ChangeLabel, Font = Theme.UiFont(9f), BaseHeight = 30, Margin = Padding.Empty };
+        _substitutionsButton = Button("", TrayApp.SubstitutionsLabel);
+        _substitutionsButton.Margin = new Padding(0, 0, 16, 0);
 
         foreach (var combo in new[] { _voice, _speed })
         {
@@ -139,7 +142,7 @@ public sealed class MainWindow : Form
         var card = new Card(_theme) { Dock = DockStyle.Fill, Margin = new Padding(0, 12, 0, 14) };
         card.Controls.Add(_text);
 
-        var actions = Bar(Row(_speak, _stop), Row(_smaller, _larger, _clear));
+        var actions = Bar(Row(_speak, _stop), Row(_substitutionsButton, _smaller, _larger, _clear));
         _clear.Margin = Padding.Empty;
 
         _hint.ForeColor = _theme.Muted;
@@ -154,6 +157,8 @@ public sealed class MainWindow : Form
         {
             Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, Padding = new Padding(22, 16, 22, 12), BackColor = _theme.Window,
         };
+        // One column, the window's width: left to size itself, it can measure wider than the window at its minimum size.
+        root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -179,6 +184,7 @@ public sealed class MainWindow : Form
         };
         _stop.Click += (_, _) => _player.Stop();
         _clear.Click += (_, _) => { ReplaceText(""); _text.Focus(); };
+        _substitutionsButton.Click += (_, _) => SubstitutionsChosen?.Invoke(null);
         _smaller.Click += (_, _) => StepTextSize(-1);
         _larger.Click += (_, _) => StepTextSize(+1);
         _hotkeysButton.Click += (_, _) =>
@@ -263,6 +269,9 @@ public sealed class MainWindow : Form
 
     /// <summary>The user picked a text size in the window, in points.</summary>
     public event Action<float>? TextSizeChosen;
+
+    /// <summary>The user asked for the word substitutions, with the word to start an entry for, if any.</summary>
+    public event Action<string?>? SubstitutionsChosen;
 
     /// <summary>The user asked to change an action's hotkey from the window.</summary>
     public event Action<HotkeyAction>? HotkeyChangeChosen;
@@ -359,8 +368,11 @@ public sealed class MainWindow : Form
         var paste = Item("Paste", "Ctrl+V", PastePlain);
         var delete = Item("Delete", "Del", () => _text.SelectedText = "");
         var selectAll = Item("Select all", "Ctrl+A", _text.SelectAll);
+        string? word = null;
+        var substitute = Item("Add substitution…", null, () => SubstitutionsChosen?.Invoke(word));
         _textMenu.Items.AddRange([
             readFromHere, readSelection, pasteAndRead, new ToolStripSeparator(),
+            substitute, new ToolStripSeparator(),
             undo, new ToolStripSeparator(), cut, copy, paste, delete, new ToolStripSeparator(), selectAll,
         ]);
 
@@ -378,8 +390,15 @@ public sealed class MainWindow : Form
             cut.Enabled = copy.Enabled = delete.Enabled = selected;
             paste.Enabled = clipboardText;
             selectAll.Enabled = _text.TextLength > 0;
+            // The selection when it is a word or short phrase on one line; otherwise the word clicked.
+            var chosen = _text.SelectedText.Trim();
+            word = chosen.Length is > 0 and <= 60 && !chosen.Contains('\n') ? chosen : Substitutions.WordAt(text, _readFrom);
+            if (word.Length == 0) word = null;
+            substitute.Text = word is null ? "Add substitution…" : $"Add substitution for “{Shorten(word)}”…";
         };
     }
+
+    static string Shorten(string s) => s.Length <= 30 ? s : s[..29] + "…";
 
     /// <summary>Pastes the clipboard as plain text: formatting from a web page or document has no place in what is read aloud.</summary>
     void PastePlain()

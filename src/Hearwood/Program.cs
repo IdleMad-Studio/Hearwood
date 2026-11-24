@@ -69,7 +69,8 @@ static class Program
 
     /// <summary>
     /// <c>Hearwood.exe --stream-to OUT.wav RATE TEXT...</c>: plays TEXT through the same stretched stream as
-    /// the speakers get, into a WAV, and writes OUT.wav.words.txt with the time each word would be lit.
+    /// the speakers get, into a WAV, and writes OUT.wav.words.txt with the time each word would be lit. The saved word
+    /// substitutions apply, as they do to what the app speaks.
     /// </summary>
     static int StreamTo(string[] args)
     {
@@ -80,7 +81,7 @@ static class Program
             var text = string.Join(' ', args[2..]);
             using var pocket = new PocketService();
             string voice = PocketService.DefaultVoice;
-            using var stream = new SpeechStream(_ => pocket.ReadyAsync(voice), Text.SpeechPlan.Build(text), voice, waitForSpeech: true) { Rate = () => rate };
+            using var stream = new SpeechStream(_ => pocket.ReadyAsync(voice), Text.SpeechPlan.Build(text, Text.Substitutions.Load().Apply), voice, waitForSpeech: true) { Rate = () => rate };
             stream.Start();
 
             var samples = new List<float>();

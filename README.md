@@ -9,6 +9,7 @@ Hearwood is a small Windows tray app that reads text aloud. Select text in any a
 - **Word highlighting** in the Hearwood window follows the speech. The model doesn't report timings, so the highlight position is an estimate.
 - **Read from any word** or just the selected text, from the window's right-click menu.
 - **Adjustable text size** in the window.
+- **Word substitutions**: tell it how to say words it gets wrong. Lists are ListenEasy files, so they can be shared with other apps that use the format.
 - **Fifteen voices**, American and British, female and male (see [Voices](#voices)).
 - **Light and dark themes**, following the Windows setting.
 - **Start with Windows** (an option in the tray menu), starting in the tray.
@@ -21,7 +22,7 @@ Hearwood is a small Windows tray app that reads text aloud. Select text in any a
 
 ## Using it
 
-Hearwood lives in the notification area. Double-click the tray icon to open the window. Right-click it to speak the clipboard, pause or stop, choose a voice or speed, change the hotkeys, turn on Start with Windows, or quit.
+Hearwood lives in the notification area. Double-click the tray icon to open the window. Right-click it to speak the clipboard, pause or stop, choose a voice or speed, edit the word substitutions, change the hotkeys, turn on Start with Windows, or quit.
 
 | Hotkey | Action |
 |---|---|
@@ -36,13 +37,19 @@ To read the selection, Hearwood presses Ctrl+C in the app you're using and then 
 
 In the window, type or paste text and press **Speak**. The same button pauses and resumes.
 
-Right-click the text for **Read from here** (starting at the word you clicked), **Read selection**, **Paste and read** (replacing the text with the clipboard), and the usual Undo, Cut, Copy, Paste and Select all. Opened from the keyboard (Shift+F10 or the Menu key), Read from here starts at the cursor.
+Right-click the text for **Read from here** (starting at the word you clicked), **Read selection**, **Paste and read** (replacing the text with the clipboard), **Add substitution** (for the word you clicked), and the usual Undo, Cut, Copy, Paste and Select all. Opened from the keyboard (Shift+F10 or the Menu key), Read from here starts at the cursor.
 
 To change the text size, use the **A−** and **A+** buttons, press Ctrl+Plus or Ctrl+Minus (Ctrl+0 goes back to the default), or hold Ctrl and turn the mouse wheel. The size is remembered.
 
+### Word substitutions
+
+If the voice says a word wrong, or should expand one ("BRB" as "be right back"), click **Word Substitutions** in the window or the tray menu, type the word and what to say instead, and click **Add / Update**. **Hear word** and **Hear substitute** play each one, so you can try spellings until it sounds right. Changes are saved straight away and apply to everything read from then on; the text itself isn't changed, and the original word is still highlighted.
+
+A substitution matches whole words and ignores case, keeping a capital at the start of a sentence; tick **Match case** to match only the exact spelling ("US" but not "us"). Longer entries win over shorter ones, and a substitute is never substituted again. **Import** and **Export** read and write ListenEasy substitution files.
+
 ### Settings and files
 
-Everything is kept in `%APPDATA%\Hearwood`: settings in `config.json`, and the model and voices under `pocket\` (the Store version keeps its model inside the app instead). To remove the Store version, uninstall it from Settings > Apps; Windows deletes its settings too, unless another build of Hearwood made that folder first, in which case the two share it and it stays. To remove another build completely, turn off Start with Windows, quit it, and delete that folder along with the app's own folder.
+Everything is kept in `%APPDATA%\Hearwood`: settings in `config.json`, word substitutions in `substitutions.json`, and the model and voices under `pocket\` (the Store version keeps its model inside the app instead). To remove the Store version, uninstall it from Settings > Apps; Windows deletes its settings too, unless another build of Hearwood made that folder first, in which case the two share it and it stays. To remove another build completely, turn off Start with Windows, quit it, and delete that folder along with the app's own folder.
 
 ## Voices
 

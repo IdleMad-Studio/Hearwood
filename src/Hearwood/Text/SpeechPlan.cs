@@ -40,7 +40,8 @@ public static partial class SpeechPlan
     private static readonly char[] ClosingMarks = ['"', '\'', '”', '’', ')', ']'];
     private static readonly char[] Whitespace = [' ', '\t', '\r', '\n'];
 
-    public static IReadOnlyList<SpeechPiece> Build(string text)
+    /// <param name="substitute">Rewrites what each piece says (the user's word substitutions); the words keep their place in <paramref name="text"/>.</param>
+    public static IReadOnlyList<SpeechPiece> Build(string text, Func<string, string>? substitute = null)
     {
         var pieces = new List<SpeechPiece>();
         int cursor = 0; // where the next word is looked for in the source
@@ -67,7 +68,15 @@ public static partial class SpeechPlan
 
                     bool last = p == parts.Count - 1;
                     bool endsParagraph = last && s == sentences.Count - 1;
-                    var spoken = WithPercentSpoken(parts[p]);
+                    var said = substitute?.Invoke(parts[p]) ?? parts[p];
+                    if (!said.Any(char.IsLetterOrDigit))
+                    {
+                        // Substituted away ("um" said as nothing): no call, but the pause it ended still follows.
+                        if (pieces.Count > 0)
+                            pieces[^1] = pieces[^1] with { PauseAfter = Math.Max(pieces[^1].PauseAfter, PauseAfter(parts[p], endsParagraph && g < paragraphs.Count - 1)) };
+                        continue;
+                    }
+                    var spoken = WithPercentSpoken(said);
                     if (last)
                         spoken = WithSentenceStop(spoken);
                     pieces.Add(new SpeechPiece(spoken, spans, PauseAfter(spoken, endsParagraph && g < paragraphs.Count - 1)));
@@ -78,10 +87,10 @@ public static partial class SpeechPlan
     }
 
     /// <summary>The pieces for the <paramref name="part"/> of <paramref name="text"/>, with word offsets still in the whole text.</summary>
-    public static IReadOnlyList<SpeechPiece> Build(string text, Range part)
+    public static IReadOnlyList<SpeechPiece> Build(string text, Range part, Func<string, string>? substitute = null)
     {
         int from = part.GetOffsetAndLength(text.Length).Offset;
-        var pieces = Build(text[part]);
+        var pieces = Build(text[part], substitute);
         return from == 0 ? pieces : pieces
             .Select(p => p with { Words = p.Words.Select(w => w with { Start = w.Start + from }).ToList() })
             .ToList();

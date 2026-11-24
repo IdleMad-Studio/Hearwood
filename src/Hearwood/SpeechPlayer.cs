@@ -31,11 +31,17 @@ public sealed class SpeechPlayer : IDisposable
     /// <summary>What the utterance was started with, so the UI knows whether the words reported are the text box's.</summary>
     public object? CurrentTag => _current is { Finished: false } u ? u.Tag : null;
 
-    /// <summary>Speaks the <paramref name="part"/> of <paramref name="text"/> (all of it by default); the words reported are offsets in the whole text.</summary>
-    public void Speak(string text, string voice, object? tag = null, Range? part = null)
+    /// <summary>The user's word substitutions, applied to what each utterance says from when it starts.</summary>
+    public Substitutions Substitutions { get; set; } = Substitutions.Empty;
+
+    /// <summary>
+    /// Speaks the <paramref name="part"/> of <paramref name="text"/> (all of it by default), with the word substitutions
+    /// unless <paramref name="substitute"/> is false; the words reported are offsets in the whole text.
+    /// </summary>
+    public void Speak(string text, string voice, object? tag = null, Range? part = null, bool substitute = true)
     {
         Stop();
-        var plan = SpeechPlan.Build(text, part ?? Range.All);
+        var plan = SpeechPlan.Build(text, part ?? Range.All, substitute ? Substitutions.Apply : null);
         if (plan.Count == 0)
             return;
         var stream = new SpeechStream(_ => _pocket.ReadyAsync(voice), plan, voice) { Rate = () => Rate };

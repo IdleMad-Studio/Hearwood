@@ -23,11 +23,12 @@ public sealed class TrayApp : ApplicationContext
     readonly ToolStripMenuItem _hotkeysMenu = new(HotkeyDialog.ChangeLabel);
     readonly RegisteredWaitHandle _showWait;
     HotkeyDialog? _hotkeyDialog;
+    SubstitutionsDialog? _substitutionsDialog;
     bool _exiting;
 
     public TrayApp(bool showWindow, EventWaitHandle showRequests)
     {
-        _player = new SpeechPlayer(_pocket) { Rate = _cfg.Rate };
+        _player = new SpeechPlayer(_pocket) { Rate = _cfg.Rate, Substitutions = LoadSubstitutions(out var substitutionsProblem) };
         _window = new MainWindow(_cfg, _pocket, _player);
         _ = _window.Handle; // so worker threads can post to it before it is first shown
 
@@ -40,6 +41,7 @@ public sealed class TrayApp : ApplicationContext
         _window.VoiceChosen += SetVoice;
         _window.RateChosen += SetRate;
         _window.TextSizeChosen += SetTextSize;
+        _window.SubstitutionsChosen += OpenSubstitutions;
         _window.HotkeyChangeChosen += ChangeHotkey;
 
         _pauseItem.Enabled = false;
@@ -54,6 +56,7 @@ public sealed class TrayApp : ApplicationContext
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(_voiceMenu);
         menu.Items.Add(_speedMenu);
+        menu.Items.Add(SubstitutionsLabel + "…", null, (_, _) => OpenSubstitutions(null));
         menu.Items.Add(_hotkeysMenu);
         menu.Items.Add(new ToolStripSeparator());
         var startup = new ToolStripMenuItem("Start with Windows") { Checked = _cfg.StartWithWindows };
@@ -81,6 +84,8 @@ public sealed class TrayApp : ApplicationContext
         _tray.DoubleClick += (_, _) => _window.ShowAndActivate();
 
         RegisterHotkeys();
+        if (substitutionsProblem is not null)
+            Notify(substitutionsProblem, ToolTipIcon.Warning);
 
         // A second launch asks for the window instead of starting another copy.
         _showWait = ThreadPool.RegisterWaitForSingleObject(showRequests, (_, _) => Post(_window.ShowAndActivate), null, -1, false);
@@ -138,6 +143,62 @@ public sealed class TrayApp : ApplicationContext
             TrySave();
         }
         RegisterHotkeys();
+    }
+
+    /// <summary>The label of the tray item and the window's button that open the substitutions.</summary>
+    public const string SubstitutionsLabel = "Word Substitutions";
+
+    /// <summary>
+    /// The saved substitutions. A file that can't be read is renamed and none are used, so the next save doesn't
+    /// overwrite the list (perhaps a hand edit that went wrong); <paramref name="problem"/> says so.
+    /// </summary>
+    static Text.Substitutions LoadSubstitutions(out string? problem)
+    {
+        problem = null;
+        try { return Text.Substitutions.Load(); }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException)
+        {
+            var path = Text.Substitutions.PathOnDisk;
+            try
+            {
+                File.Move(path, path + ".unreadable", overwrite: true);
+                problem = $"The word substitutions couldn't be read, so they are off. The file was kept as {Path.GetFileName(path)}.unreadable.";
+            }
+            catch (Exception) { problem = "The word substitutions couldn't be read, so they are off: " + e.Message; }
+            return Text.Substitutions.Empty;
+        }
+    }
+
+    /// <summary>Opens the substitutions window, or brings it up; <paramref name="word"/> starts an entry for that word.</summary>
+    void OpenSubstitutions(string? word)
+    {
+        if (_substitutionsDialog is null)
+        {
+            _substitutionsDialog = new SubstitutionsDialog(_player.Substitutions.Rules, SaveSubstitutions,
+                text => _player.Speak(text, _window.Voice, substitute: false));
+            _substitutionsDialog.FormClosed += (_, _) => { _substitutionsDialog.Dispose(); _substitutionsDialog = null; };
+            _substitutionsDialog.Show();
+        }
+        if (word is not null)
+            _substitutionsDialog.Prefill(word);
+        if (_substitutionsDialog.WindowState == FormWindowState.Minimized)
+            _substitutionsDialog.WindowState = FormWindowState.Normal;
+        _substitutionsDialog.Activate();
+    }
+
+    bool SaveSubstitutions(IReadOnlyList<Text.SubstitutionRule> rules)
+    {
+        try
+        {
+            Text.Substitutions.Write(Text.Substitutions.PathOnDisk, rules);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            MessageBox.Show(_substitutionsDialog, "Couldn't save the substitutions.\n\n" + e.Message, "Hearwood", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return false;
+        }
+        _player.Substitutions = new Text.Substitutions(rules);
+        return true;
     }
 
     async Task WarmAsync()
@@ -277,6 +338,7 @@ public sealed class TrayApp : ApplicationContext
     {
         _exiting = true;
         _hotkeyDialog?.Close();
+        _substitutionsDialog?.Close();
         _showWait.Unregister(null);
         _player.Stop();
         _hotkeys.Dispose();

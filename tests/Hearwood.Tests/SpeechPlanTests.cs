@@ -184,6 +184,32 @@ public class SpeechPlanTests
     }
 
     [Fact]
+    public void Substitutions_change_what_is_said_but_words_keep_their_place_in_the_text()
+    {
+        const string text = "I write XAML daily.";
+        var subs = new Substitutions([new SubstitutionRule("XAML", "zammel")]);
+
+        var piece = Assert.Single(SpeechPlan.Build(text, subs.Apply));
+
+        Assert.Equal("I write zammel daily.", piece.Text);
+        Assert.Equal(["I", "write", "XAML", "daily."], piece.Words.Select(w => text.Substring(w.Start, w.Length)));
+    }
+
+    [Fact]
+    public void A_sentence_substituted_away_is_not_spoken_but_its_pause_stays()
+    {
+        // "Um." ends the paragraph, so the paragraph's pause moves to the sentence before it.
+        const string text = "Hi there. Um.\nNext one.";
+        var subs = new Substitutions([new SubstitutionRule("Um.", "")]);
+
+        var pieces = SpeechPlan.Build(text, subs.Apply);
+
+        Assert.Equal(["Hi there.", "Next one."], pieces.Select(p => p.Text));
+        Assert.Equal(SpeechPlan.ParagraphPause, pieces[0].PauseAfter);
+        Assert.Equal(SpeechPlan.SentencePause, SpeechPlan.Build(text)[0].PauseAfter);
+    }
+
+    [Fact]
     public void Reading_a_selection_stops_at_its_end()
     {
         const string text = "Before it. The chosen words here. After it.";
